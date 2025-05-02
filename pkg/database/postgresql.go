@@ -48,5 +48,24 @@ func ConnectPostgresWithConfig(config *Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("failed to ping database: %w", err)
 	}
 	log.Println("Successfully connected to PostgreSQL database")
+
+	// Initialise the database schema if needed
+	initQuery := `
+		CREATE TABLE IF NOT EXISTS urls (
+			id BIGINT PRIMARY KEY,
+			long_url TEXT NOT NULL,
+			short_url VARCHAR(10) UNIQUE NOT NULL,
+			created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+
+		CREATE INDEX IF NOT EXISTS idx_short_url ON urls(short_url);
+	`
+
+	if _, err := db.Exec(initQuery); err != nil {
+		return nil, fmt.Errorf("failed to initialize database schema: %w", err)
+	}
+	log.Println("Database schema initialized successfully")
+
 	return db, nil
 }
